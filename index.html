@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teddy Bear Store with 3D & AR</title>
+    
+    <!-- Google 3D Model Viewer Engine -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+
+    <!-- In-built Offline Fast QR Generator -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            padding: 15px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+        }
+
+        /* DELIVERY ADDRESS BOX */
+        .address-box {
+            background: #ffffff;
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            border-left: 4px solid #007bff;
+        }
+        .address-box h3 {
+            font-size: 16px;
+            color: #222;
+            margin-bottom: 12px;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        .form-input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+        .form-input:focus {
+            border-color: #007bff;
+        }
+        textarea.form-input {
+            resize: vertical;
+            min-height: 60px;
+        }
+
+        /* GRID LAYOUT */
+        .store-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .card {
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* IMAGE WRAPPER WITH 3D BADGE */
+        .img-wrapper {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            border-radius: 8px;
+            overflow: hidden;
+            background-color: #eee;
+        }
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .badge-3d {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-3d:active {
+            transform: scale(0.95);
+        }
+
+        h2 {
+            font-size: 18px;
+            color: #222;
+            margin: 12px 0 6px 0;
+        }
+        p {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        .price-tag {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-bottom: 12px;
+        }
+        .qty-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+        }
+        .qty-btn {
+            background: #e0e0e0;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .qty-val {
+            font-weight: bold;
+            font-size: 15px;
+            min-width: 20px;
+            text-align: center;
+        }
+        .action-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .details-btn {
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 9px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .wa-btn {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 11px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+        }
+        .details-content {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fcfcfc;
+            border: 1px dashed #ccc;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #444;
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        /* ================= 3D VIEWER FULLSCREEN MODAL ================= */
+        .modal-3d {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #101216;
+            z-index: 99999;
+            flex-direction: column;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(8px);
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .nav-back-btn {
+            background: #242830;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .modal-header h3 {
+            font-size: 15px;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+
+        model-viewer {
+            width: 100%;
+            flex: 1;
+            background: radial-gradient(circle, #252b36 0%, #0d0f13 100%);
+            --poster-color: transparent;
+        }
+
+        .guide-text {
+            text-align: center;
+            color: #9aa0a6;
+            font-size: 11px;
+            padding: 6px;
+            background: rgba(0,0,0,0.4);
+        }
+
+        .modal-footer {
+            display: flex;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            gap: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .foot-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-qr-card {
+            background: #007bff;
+            color: #fff;
+        }
+
+        /* ================= BRANDED QR CARD POPUP ================= */
+        .card-popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 100000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .card-container {
+            background: #1e222b;
+            width: 100%;
+            max-width: 360px;
+            border-radius: 16px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #cardCanvas {
+            width: 100%;
+            max-width: 300px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.4);
+            margin-bottom: 14px;
+        }
+        .card-actions {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            gap: 8px;
+        }
+        .btn-card-share {
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        .btn-card-download {
+            background: #333a44;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+        }
+        .btn-card-close {
+            background: transparent;
+            color: #aaa;
+            border: 1px solid #444;
+            padding: 7px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>🧸 Teddy Bear Collection</h1>
+
+    <!-- 1. CUSTOMER DELIVERY DETAILS FORM -->
+    <div class="address-box">
+        <h3>📍 Delivery Details (Pehle yeh bharein)</h3>
+        <div class="form-group">
+            <label for="custName">Customer Name:</label>
+            <input type="text" id="custName" class="form-input" placeholder="Apna pura naam likhein">
+        </div>
+        <div class="form-group">
+            <label for="custAddress">Full Address & Pincode:</label>
+            <textarea id="custAddress" class="form-input" placeholder="Makan no., Gali, Shahar, aur Pincode likhein"></textarea>
+        </div>
+    </div>
+
+    <!-- PRODUCTS GRID -->
+    <div class="store-grid">
+
+        <!-- PRODUCT 1 -->
+        <div class="card" id="prod-1" data-title="Classic Brown Teddy" data-price="499" data-model="https://modelviewer.dev/shared-assets/models/Astronaut.glb">
+            <div class="img-wrapper">
+                <img class="product-image" src="https://images.unsplash.com/photo-1559454403-b8fb88521f11?w=500" alt="Brown Teddy">
+                <button class="badge-3d" onclick="open3DViewer('prod-1')">🧊 3D View</button>
+            </div>
+
+            <h2>Classic Brown Teddy</h2>
+            <p>Super soft material with premium plush finish.</p>
+            <div class="price-tag">Total: Rs. <span class="total-price">499</span></div>
+            
+            <div class="qty-box">
+                <button class="qty-btn" onclick="updateQty('prod-1', -1)">-</button>
+                <span class="qty-val">1</span>
+                <button class="qty-btn" onclick="updateQty('prod-1', 1)">+</button>
+            </div>
+
+            <div class="action-btns">
+                <button class="details-btn" onclick="toggleDetails('prod-1')">View Specs</button>
+                <button class="wa-btn" onclick="sendOrder('prod-1')">Order on WhatsApp</button>
+            </div>
+
+            <div class="details-content">
+                Height: 30 cm<br>
+                Material: 100% Non-Toxic Plush<br>
+                Washable: Yes (Hand Wash)
+            </div>
+        </div>
+
+        <!-- PRODUCT 2 -->
+        <div class="card" id="prod-2" data-title="White Soft Teddy" data-price="799" data-model="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb">
+            <div class="img-wrapper">
+                <img class="product-image" src="https://images.unsplash.com/photo-1556012018-50c5c0da73bf?w=500" alt="White Soft Teddy">
+                <button class="badge-3d" onclick="open3DViewer('prod-2')">🧊 3D View</button>
+            </div>
+
+            <h2>White Soft Teddy</h2>
+            <p>Ultra-cute cuddly companion for kids and gifting.</p>
+            <div class="price-tag">Total: Rs. <span class="total-price">799</span></div>
+            
+            <div class="qty-box">
+                <button class="qty-btn" onclick="updateQty('prod-2', -1)">-</button>
+                <span class="qty-val">1</span>
+                <button class="qty-btn" onclick="updateQty('prod-2', 1)">+</button>
+            </div>
+
+            <div class="action-btns">
+                <button class="details-btn" onclick="toggleDetails('prod-2')">View Specs</button>
+                <button class="wa-btn" onclick="sendOrder('prod-2')">Order on WhatsApp</button>
+            </div>
+
+            <div class="details-content">
+                Height: 45 cm<br>
+                Material: High Quality Cotton<br>
+                Washable: Gentle Machine Wash
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ================= 3D INTERACTIVE MODAL SCREEN ================= -->
+    <div id="viewer3dModal" class="modal-3d">
+        <div class="modal-header">
+            <button class="nav-back-btn" onclick="close3DViewer()">← Back</button>
+            <h3 id="modalProductName">3D Model</h3>
+            <div style="width:50px;"></div>
+        </div>
+
+        <!-- 3D MODEL VIEWER WITH AR -->
+        <model-viewer id="mainViewer"
+            src=""
+            alt="Teddy 3D Model"
+            auto-rotate
+            camera-controls
+            touch-action="pan-y"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            shadow-intensity="1"
+            exposure="1">
+        </model-viewer>
+
+        <div class="guide-text">👆 Ungli se 360° ghumayein & pinch karke zoom karein</div>
+
+        <div class="modal-footer">
+            <button class="foot-btn btn-qr-card" onclick="openCardPopup()">📱 3D Photo Card Bhejo (QR)</button>
+        </div>
+    </div>
+
+    <!-- HIDDEN DIV FOR LOCAL QR GENERATION -->
+    <div id="hiddenQr" style="display:none;"></div>
+
+    <!-- ================= BRANDED QR CARD POPUP ================= -->
+    <div id="cardModal" class="card-popup-overlay">
+        <div class="card-container">
+            <!-- CANVAS WHERE DIGITAL CARD IS DRAWN -->
+            <canvas id="cardCanvas"></canvas>
+            
+            <div class="card-actions">
+                <button class="btn-card-share" onclick="shareCardImageDirectly()">
+                    📲 WhatsApp par Photo Bhejo
+                </button>
+                <button class="btn-card-download" onclick="downloadCardImage()">
+                    📥 Photo Gallery me Save Karein
+                </button>
+                <button class="btn-card-close" onclick="closeCardPopup()">Band Karein (Close)</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const MY_WHATSAPP_NUMBER = "918178696656";
+        let activeCardId = "";
+        let activeModelTitle = "";
+        let activePrice = "";
+
+        // Auto Deep-link: Agar kisi ne direct link open kiya toh 3D khul jaye
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetProd = urlParams.get('view3d');
+            if (targetProd && document.getElementById(targetProd)) {
+                open3DViewer(targetProd);
+            }
+        });
+
+        function getDirectUrl() {
+            return window.location.origin + window.location.pathname + '?view3d=' + activeCardId;
+        }
+
+        // ================= 3D VIEWER FUNCTIONS =================
+        function open3DViewer(cardId) {
+            activeCardId = cardId;
+            const card = document.getElementById(cardId);
+            activeModelTitle = card.getAttribute('data-title');
+            activePrice = card.getAttribute('data-price');
+            const modelUrl = card.getAttribute('data-model');
+
+            document.getElementById('modalProductName').innerText = activeModelTitle;
+            const viewer = document.getElementById('mainViewer');
+            viewer.setAttribute('src', modelUrl);
+
+            document.getElementById('viewer3dModal').style.display = 'flex';
+        }
+
+        function close3DViewer() {
+            document.getElementById('viewer3dModal').style.display = 'none';
+            document.getElementById('mainViewer').setAttribute('src', '');
+            if (window.location.search.includes('view3d')) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }
+
+        // ================= BRANDED DIGITAL CARD GENERATOR =================
+        function openCardPopup() {
+            const directUrl = getDirectUrl();
+            const qrContainer = document.getElementById("hiddenQr");
+            qrContainer.innerHTML = "";
+
+            // Offline instant clean QR generate
+            new QRCode(qrContainer, {
+                text: directUrl,
+                width: 220,
+                height: 220,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Canvas par clean photo card draw karna
+            setTimeout(() => {
+                const qrCanvas = qrContainer.querySelector('canvas');
+                const canvas = document.getElementById('cardCanvas');
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = 380;
+                canvas.height = 490;
+
+                // 1. Background White Card
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 380, 490);
+
+                // 2. Stylish Header
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(0, 0, 380, 75);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 18px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('🧸 3D Interactive Model', 190, 35);
+
+                ctx.font = '12px Arial';
+                ctx.fillStyle = '#9ca3af';
+                ctx.fillText('Live 360° Augmented Reality', 190, 56);
+
+                // 3. Product Title & Price
+                ctx.fillStyle = '#1f2937';
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText(activeModelTitle, 190, 115);
+
+                ctx.fillStyle = '#16a34a';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText('Price: Rs. ' + activePrice, 190, 140);
+
+                // 4. Draw QR Code with border
+                ctx.strokeStyle = '#e5e7eb';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(70, 160, 240, 240);
+
+                if (qrCanvas) {
+                    ctx.drawImage(qrCanvas, 80, 170, 220, 220);
+                }
+
+                // 5. Instruction Footer (No scary links!)
+                ctx.fillStyle = '#374151';
+                ctx.font = 'bold 13px Arial';
+                ctx.fillText('📷 Phone Camera ya Google Lens se Scan karein', 190, 435);
+
+                ctx.font = '11px Arial';
+                ctx.fillStyle = '#6b7280';
+                ctx.fillText('Scan karte hi 3D model screen par ghoomne lagega!', 190, 460);
+
+                document.getElementById('cardModal').style.display = 'flex';
+            }, 100);
+        }
+
+        function closeCardPopup() {
+            document.getElementById('cardModal').style.display = 'none';
+        }
+
+        // WhatsApp par seedhe ASLI PHOTO bhejna (No scary URL!)
+        function shareCardImageDirectly() {
+            const canvas = document.getElementById('cardCanvas');
+            canvas.toBlob(async (blob) => {
+                const file = new File([blob], `${activeModelTitle}_3D_Card.png`, { type: 'image/png' });
+                
+                // Android Chrome / Native Share support
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: activeModelTitle,
+                            text: `🧸 *${activeModelTitle}* ka 3D Model!\nIs photo ko scan karein aur teddy ko 360° ghumakar dekhein.`
+                        });
+                    } catch (e) {}
+                } else {
+                    // Fallback
+                    downloadCardImage();
+                    alert("Photo aapki gallery me save ho gayi hai! Ab WhatsApp par jaakar is photo ko bhej dein.");
+                }
+            }, 'image/png');
+        }
+
+        function downloadCardImage() {
+            const canvas = document.getElementById('cardCanvas');
+            const link = document.createElement('a');
+            link.download = `${activeModelTitle}_3D_Card.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // ================= STORE & CART FUNCTIONS =================
+        function updateQty(cardId, change) {
+            const card = document.getElementById(cardId);
+            const qtySpan = card.querySelector('.qty-val');
+            const totalSpan = card.querySelector('.total-price');
+            const basePrice = parseInt(card.getAttribute('data-price'));
+
+            let currentQty = parseInt(qtySpan.innerText);
+            let newQty = currentQty + change;
+
+            if (newQty < 1) newQty = 1;
+
+            qtySpan.innerText = newQty;
+            totalSpan.innerText = newQty * basePrice;
+        }
+
+        function toggleDetails(cardId) {
+            const card = document.getElementById(cardId);
+            const details = card.querySelector('.details-content');
+            const btn = card.querySelector('.details-btn');
+
+            if (details.style.display === "block") {
+                details.style.display = "none";
+                btn.innerText = "View Specs";
+            } else {
+                details.style.display = "block";
+                btn.innerText = "Hide Specs";
+            }
+        }
+
+        function sendOrder(cardId) {
+            const name = document.getElementById("custName").value.trim();
+            const address = document.getElementById("custAddress").value.trim();
+
+            if (!name || !address) {
+                alert("Kripya pehle apna Naam aur Pura Pata (Address) bharein!");
+                document.getElementById("custName").focus();
+                return;
+            }
+
+            const card = document.getElementById(cardId);
+            const title = card.getAttribute('data-title');
+            const qty = card.querySelector('.qty-val').innerText;
+            const total = card.querySelector('.total-price').innerText;
+
+            const message = 
+`*NEW TEDDY ORDER*
+------------------------
+*Product:* ${title}
+*Quantity:* ${qty}
+*Total Price:* Rs. ${total}
+------------------------
+*Customer Details:*
+*Naam:* ${name}
+*Address:* ${address}`;
+
+            const encodedMsg = encodeURIComponent(message);
+            window.open(`https://wa.me/${MY_WHATSAPP_NUMBER}?text=${encodedMsg}`, '_blank');
+        }
+    </script>
+
+</body>
+</html>
